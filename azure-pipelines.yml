@@ -1,3 +1,17 @@
-pool: MyAgentPool
+trigger:
+  branches:
+    include:
+      - main  # Adjust to your default branch
+
+pool:
+  name: local  # Use your local agent pool name
+
 steps:
-- bash: echo hello world
+- script: echo hello world
+  displayName: 'Print Hello World'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'  # Specify your .csproj files
+    arguments: '--configuration Release'  # Optional: specify configuration
