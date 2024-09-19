@@ -1,17 +1,43 @@
 trigger:
-  branches:
-    include:
-      - main  # Adjust to your default branch
+- '*'  # Triggers the pipeline for any branch
 
 pool:
-  name: local  # Use your local agent pool name
+  name: local  # Specify your custom agent pool name
+
+variables:
+  buildConfiguration: 'Release'  # Set the build configuration
 
 steps:
-- script: echo hello world
-  displayName: 'Print Hello World'
+- task: UseDotNet@2
+  displayName: 'Use .NET SDK 8.x'
+  inputs:
+    packageType: sdk
+    version: '8.x'
+
+- task: Npm@1
+  displayName: 'Run npm install'
+  inputs:
+    verbose: false
+
+- script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
+  displayName: 'Compile Sass assets'
+
+- task: gulp@1
+  displayName: 'Run gulp tasks'
+
+- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+  displayName: 'Write build info'
+  workingDirectory: Tailspin.SpaceGame.Web/wwwroot
 
 - task: DotNetCoreCLI@2
+  displayName: 'Restore project dependencies'
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - Release'
   inputs:
     command: 'build'
-    projects: '**/*.csproj'  # Specify your .csproj files
-    arguments: '--configuration Release'  # Optional: specify configuration
+    arguments: '--no-restore --configuration Release'
+    projects: '**/*.csproj'
